@@ -1,20 +1,37 @@
 resource "aws_instance" "webserver" {
   ami           = "ami-0b752bf1df193a6c4"
   instance_type = "t2.micro"
-  user_data = <<-EOF
-
-              #!/bin/bash
-                  yum update -y
-                  yum install httpd -y
-                  systemctl start httpd
-                  systemctl enable httpd
-                  AZ_ZONE=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
-                  echo "<h1>Hello World from $(hostname -f) in AZ $AZ_ZONE </h1>"> /var/www/html/index.html
-
-EOF
+  user_data = file("./scripts/install_httpd.sh")
+  vpc_security_group_ids = [aws_security_group.webserver_sg.id]
 
   tags = {
     Name = "Webserver"
     ENV = "Dev"
   }
+  }
+
+
+  resource "aws_security_group" "webserver_sg" {
+    name        = "webserver SG"
+    description = "Allow TLS inbound traffic"
+
+    ingress {
+      description      = "webserver port"
+      from_port        = 80
+      to_port          = 80
+      protocol         = "tcp"
+      cidr_blocks      = ["0.0.0.0/0"]
+    }
+
+    egress {
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+    }
+
+    tags = {
+      Name = "webserver SG"
+    }
   }
