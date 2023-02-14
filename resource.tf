@@ -1,5 +1,5 @@
 resource "aws_instance" "webserver" {
-  ami                    = var.ami_id
+  ami                    = data.aws_ami.aws_linux_2_latest.id
   instance_type          = var.instance_type
   user_data              = file("./scripts/install_httpd.sh")
   vpc_security_group_ids = [aws_security_group.webserver_sg.id]
@@ -7,6 +7,15 @@ resource "aws_instance" "webserver" {
   tags = var.custom_tags
 }
 
+
+data "aws_ami" "aws_linux_2_latest" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*"]
+  }
+}
 
 resource "aws_security_group" "webserver_sg" {
   name        = "webserver SG"
